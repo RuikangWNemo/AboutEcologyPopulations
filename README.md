@@ -1,1371 +1,187 @@
-# About Ecology Populations
+# Ecological Models Simulation Tool - Comprehensive Manual
 Interactive simulations of Logistic Growth, Predator-Prey, and Interspecific Competition models
 Ecological Models Simulation — User & Developer Manual
 
-This manual explains what the tool does, how to use every control, how to read the outputs, and how the code works under the hood—including the equations, numerical methods, and design decisions.
+## Introduction
 
-1) What this tool is
+The Ecological Models Simulation Tool is an interactive web application designed to help students, educators, and researchers visualize and understand three fundamental ecological models: Logistic Growth, Predator-Prey (Lotka-Volterra), and Interspecific Competition. This tool provides real-time simulations with adjustable parameters, detailed visualizations, and data export capabilities.
 
-An interactive, single-file HTML app for exploring three foundational ecological models:
+## Models Overview
 
-Logistic Growth — population growth with carrying capacity.
+### 1. Logistic Growth Model
+The logistic growth model describes how populations grow in limited resource environments, incorporating the concept of carrying capacity (K) as a limiting factor.
 
-Lotka–Volterra Predator–Prey — coupled consumer–resource oscillations.
+**Equation**: dN/dt = rN(1 - N/K)
 
-Interspecific Competition — two species competing for shared resources.
+**Analytical Solution**: N(t) = K / [1 + ((K - N₀)/N₀)e^(-rt)]
 
-The page renders sliders and inputs for parameters, draws time-series charts for populations and their rates of change, and lets you download results as CSV.
+### 2. Predator-Prey Model (Lotka-Volterra)
+This model describes the dynamics between predator and prey populations, showing how they influence each other's growth rates.
 
-Tech stack: Pure HTML/CSS/JS + [Chart.js] (via CDN). No build tools, no server required.
+**Equations**:
+- Prey: dx/dt = αx - βxy
+- Predator: dy/dt = δβxy - γy
 
-2) Quick start (for users)
+### 3. Interspecific Competition Model
+This model describes competition between two species for limited resources, based on the Lotka-Volterra competition equations.
 
-Open the file in any modern browser (Chrome, Edge, Firefox, Safari).
+**Equations**:
+- Species 1: dN₁/dt = r₁N₁ (1 − (N₁ + αN₂)/K₁)
+- Species 2: dN₂/dt = r₂N₂ (1 − (N₂ + βN₁)/K₂)
 
-Use the tabs to select a model.
-
-Adjust parameters with sliders or number inputs (they stay in sync).
-
-Click Run Simulation to recompute and update the charts.
-
-Inspect the two charts:
-
-Left: populations over time.
-
-Right: rate of change (e.g., 
-𝑑
-𝑁
-/
-𝑑
-𝑡
-dN/dt, 
-𝑑
-𝑥
-/
-𝑑
-𝑡
-dx/dt, 
-𝑑
-𝑦
-/
-𝑑
-𝑡
-dy/dt).
-
-Read current values in the Changing Rate / K box below the charts.
-
-Click Download Data to export a CSV of the most recent run.
-
-Tips
-
-Start with the default parameters to see “typical” dynamics.
-
-For Predator–Prey and Competition, keep Δt small (e.g., 0.01) for smoother curves.
-
-Use Time range to zoom into short transients or long-term behavior.
-
-3) Interface reference (control → meaning → effect)
-A. Logistic Growth
-
-Growth rate (r)
-Per-capita growth at low density. Larger 
-𝑟
-r → faster approach to 
-𝐾
-K.
-
-Carrying capacity (K)
-Long-run ceiling for population 
-𝑁
-N.
-
-Initial population (N₀)
-Starting value at 
-𝑡
-=
-0
-t=0.
-
-Time range
-How long (in arbitrary time units) to simulate.
-
-Outputs
-
-Population size chart: 
-𝑁
-(
-𝑡
-)
-N(t) is sigmoidal if 
-𝑁
-0
-<
-𝐾
-N
-0
-	​
-
-<K.
-
-Growth rate chart: 
-𝑑
-𝑁
-/
-𝑑
-𝑡
-=
-𝑟
-𝑁
-(
-1
-−
-𝑁
-/
-𝐾
-)
-dN/dt=rN(1−N/K); peaks at 
-𝑁
-=
-𝐾
-/
-2
-N=K/2.
-
-Current K and Current dN/dt box: last-step values.
-
-B. Predator–Prey (Lotka–Volterra)
-
-Prey growth (α)
-Intrinsic prey growth rate without predators.
-
-Predation rate (β)
-Encounter/capture effect of predators on prey.
-
-Conversion efficiency (δ)
-Prey eaten → predator births (efficiency).
-
-Predator mortality (γ)
-Predator loss without prey.
-
-Initial prey / predator
-Starting 
-𝑥
-(
-0
-)
-x(0), 
-𝑦
-(
-0
-)
-y(0).
-
-Time range and Δt
-Simulation horizon and Euler time step.
-
-Outputs
-
-Population time series: 
-𝑥
-(
-𝑡
-)
-,
-𝑦
-(
-𝑡
-)
-x(t),y(t) often oscillate.
-
-Rate chart: 
-𝑑
-𝑥
-/
-𝑑
-𝑡
-dx/dt, 
-𝑑
-𝑦
-/
-𝑑
-𝑡
-dy/dt over time.
-
-Current rates: last-step 
-𝑑
-𝑥
-/
-𝑑
-𝑡
-dx/dt, 
-𝑑
-𝑦
-/
-𝑑
-𝑡
-dy/dt.
-
-C. Interspecific Competition
-
-𝑟
-1
-,
-𝑟
-2
-r
-1
-	​
-
-,r
-2
-	​
-
-
-Intrinsic growth rates of species 1 and 2.
-
-𝐾
-1
-,
-𝐾
-2
-K
-1
-	​
-
-,K
-2
-	​
-
-
-Carrying capacities in isolation.
-
-Competition coefficients (α, β)
-Effect of the other species in units of “self.”
-
-In 
-𝑑
-𝑁
-1
-/
-𝑑
-𝑡
-dN
-1
-	​
-
-/dt, the effective load is 
-𝑁
-1
-+
-𝛼
-𝑁
-2
-N
-1
-	​
-
-+αN
-2
-	​
-
-.
-
-In 
-𝑑
-𝑁
-2
-/
-𝑑
-𝑡
-dN
-2
-	​
-
-/dt, it’s 
-𝑁
-2
-+
-𝛽
-𝑁
-1
-N
-2
-	​
-
-+βN
-1
-	​
-
-.
-
-Initial populations, Time range, Δt.
-
-Outputs
-
-Population time series: 
-𝑁
-1
-(
-𝑡
-)
-,
-𝑁
-2
-(
-𝑡
-)
-N
-1
-	​
-
-(t),N
-2
-	​
-
-(t).
-
-Rate chart: 
-𝑑
-𝑁
-1
-/
-𝑑
-𝑡
-dN
-1
-	​
-
-/dt, 
-𝑑
-𝑁
-2
-/
-𝑑
-𝑡
-dN
-2
-	​
-
-/dt.
-
-Current rates box.
-
-Download buttons (all tabs)
-
-Export a CSV of exactly what you see on the charts for your last run.
-
-Columns are model-specific (see §7).
-
-4) Model equations & solutions
-A. Logistic Growth
-
-Differential equation
-
-𝑑
-𝑁
-𝑑
-𝑡
-=
-𝑟
- 
-𝑁
-(
-1
-−
-𝑁
-𝐾
-)
-.
-dt
-dN
-	​
-
-=rN(1−
-K
-N
-	​
-
-).
-
-Analytical solution used in the code:
-
-𝑁
-(
-𝑡
-)
-=
-𝐾
-1
-+
-(
-𝐾
-−
-𝑁
-0
-𝑁
-0
-)
-𝑒
-−
-𝑟
-𝑡
-.
-N(t)=
-1+(
-N
-0
-	​
-
-K−N
-0
-	​
-
-	​
-
-)e
-−rt
-K
-	​
-
-.
-
-From this, the app also computes
-
-𝑑
-𝑁
-𝑑
-𝑡
-(
-𝑡
-)
-=
-𝑟
- 
-𝑁
-(
-𝑡
-)
-(
-1
-−
-𝑁
-(
-𝑡
-)
-𝐾
-)
-.
-dt
-dN
-	​
-
-(t)=rN(t)(1−
-K
-N(t)
-	​
-
-).
-
-Implications
-
-𝑁
-(
-𝑡
-)
-N(t) is S-shaped when 
-𝑁
-0
-<
-𝐾
-N
-0
-	​
-
-<K, monotone decreasing when 
-𝑁
-0
->
-𝐾
-N
-0
-	​
-
->K.
-
-The maximum 
-𝑑
-𝑁
-/
-𝑑
-𝑡
-dN/dt occurs at 
-𝑁
-=
-𝐾
-/
-2
-N=K/2.
-
-B. Lotka–Volterra Predator–Prey
-𝑑
-𝑥
-𝑑
-𝑡
-	
-=
-𝛼
-𝑥
-−
-𝛽
-𝑥
-𝑦
-,
-
-
-
-
-𝑑
-𝑦
-𝑑
-𝑡
-	
-=
-𝛿
-𝛽
-𝑥
-𝑦
-−
-𝛾
-𝑦
-.
-dt
-dx
-	​
-
-dt
-dy
-	​
-
-	​
-
-=αx−βxy,
-=δβxy−γy.
-	​
-
-
-𝑥
-x: prey, 
-𝑦
-y: predator.
-
-Equilibrium (nontrivial): 
-𝑥
-∗
-=
-𝛾
-/
-(
-𝛿
-𝛽
-)
-,
-  
-𝑦
-∗
-=
-𝛼
-/
-𝛽
-x
-∗
-=γ/(δβ),y
-∗
-=α/β.
-
-Qualitative behavior: neutrally stable cycles in the idealized (undamped) version; in practice, step size and parameters can dampen or amplify numerically (see §6).
-
-Numerical method used: Forward Euler with step 
-Δ
-𝑡
-Δt (user-controlled).
-
-C. Lotka–Volterra Competition
-𝑑
-𝑁
-1
-𝑑
-𝑡
-	
-=
-𝑟
-1
-𝑁
-1
-(
-1
-−
-𝑁
-1
-+
-𝛼
-𝑁
-2
-𝐾
-1
-)
-,
-
-
-
-
-𝑑
-𝑁
-2
-𝑑
-𝑡
-	
-=
-𝑟
-2
-𝑁
-2
-(
-1
-−
-𝑁
-2
-+
-𝛽
-𝑁
-1
-𝐾
-2
-)
-.
-dt
-dN
-1
-	​
-
-	​
-
-dt
-dN
-2
-	​
-
-	​
-
-	​
-
-=r
-1
-	​
-
-N
-1
-	​
-
-(1−
-K
-1
-	​
-
-N
-1
-	​
-
-+αN
-2
-	​
-
-	​
-
-),
-=r
-2
-	​
-
-N
-2
-	​
-
-(1−
-K
-2
-	​
-
-N
-2
-	​
-
-+βN
-1
-	​
-
-	​
-
-).
-	​
-
-
-Isoclines (where growth = 0):
-
-For species 1: 
-𝑁
-1
-+
-𝛼
-𝑁
-2
-=
-𝐾
-1
-N
-1
-	​
-
-+αN
-2
-	​
-
-=K
-1
-	​
-
-.
-
-For species 2: 
-𝑁
-2
-+
-𝛽
-𝑁
-1
-=
-𝐾
-2
-N
-2
-	​
-
-+βN
-1
-	​
-
-=K
-2
-	​
-
-.
-
-Outcomes depend on relative positions of isoclines and initial conditions (coexistence, competitive exclusion, or bistability).
-
-Numerical method used: Forward Euler with 
-Δ
-𝑡
-Δt.
-
-5) Numerical methods, stability, and accuracy
-Why two approaches?
-
-Logistic uses the closed-form solution (no numerical error for 
-𝑁
-(
-𝑡
-)
-N(t) beyond floating-point).
-
-Predator–Prey and Competition have no simple closed-form; the app uses Euler for simplicity.
-
-Euler integration
-
-For a system 
-𝑧
-˙
-=
-𝑓
-(
-𝑧
-,
-𝑡
-)
-z
-˙
-=f(z,t), Euler updates:
-
-𝑧
-𝑛
-+
-1
-=
-𝑧
-𝑛
-+
-Δ
-𝑡
- 
-𝑓
-(
-𝑧
-𝑛
-,
-𝑡
-𝑛
-)
-.
-z
-n+1
-	​
-
-=z
-n
-	​
-
-+Δtf(z
-n
-	​
-
-,t
-n
-	​
-
-).
-
-Pros: simple, fast, easy to read/teach.
-Cons: conditionally stable; can introduce numerical damping or growth.
-
-Best practices in this app
-
-Keep Δt small (e.g., 0.001–0.02) when dynamics are fast (large α, β, γ, r, or tight K).
-
-If you see negative populations, the code clamps to zero after each step to avoid nonphysical values (a standard, practical safeguard).
-
-If oscillations blow up or vanish suspiciously, reduce Δt or shorten the Time range.
-
-Why not RK4?
-The original version emphasizes simplicity and transparency for learners. Euler’s method is enough to demonstrate qualitative behavior and responds immediately to parameter changes. (If you want higher accuracy and stability, RK4 is a natural upgrade.)
-
-6) Reading the charts & interpreting dynamics
-Logistic
-
-Population chart: Classic S-curve to 
-𝐾
-K.
-
-Rate chart: A hump peaking near 
-𝑁
-=
-𝐾
-/
-2
-N=K/2; returns to 0 as 
-𝑁
-→
-𝐾
-N→K.
-
-Experiments
-
-Set 
-𝑁
-0
-≪
-𝐾
-N
-0
-	​
-
-≪K: slow–fast–slow rise.
-
-Set 
-𝑁
-0
->
-𝐾
-N
-0
-	​
-
->K: decline back to 
-𝐾
-K.
-
-Increase r: reach 
-𝐾
-K faster; rate peak is higher and earlier.
-
-Predator–Prey
-
-Population chart: prey and predator oscillate with a phase lag (predators peak after prey).
-
-Rate chart: zero crossings align with prey/predator maxima/minima.
-
-Experiments
-
-Increase γ (predator mortality): predators struggle; prey can boom.
-
-Increase β (predation rate): stronger coupling; larger amplitude oscillations (but watch Δt).
-
-Competition
-
-Population chart: outcomes include coexistence or exclusion.
-
-Rate chart: helps diagnose who is currently winning or losing.
-
-Experiments
-
-Set α and β > 1 with unequal 
-𝐾
-K: often leads to exclusion of the weaker competitor.
-
-Make α and β < 1 and 
-𝐾
-1
-≈
-𝐾
-2
-K
-1
-	​
-
-≈K
-2
-	​
-
-: coexistence is more likely.
-
-7) CSV output format
-Logistic
-Time,Population,GrowthRate
-t0,N(t0),dNdt(t0)
-...
-tN,N(tN),dNdt(tN)
-
-Predator–Prey
+## How to Use the Tool
+
+### Interface Overview
+
+The interface is organized into three main tabs, one for each model. Each tab contains:
+
+1. **Parameter Controls**: Sliders and input fields to adjust model parameters
+2. **Visualization Area**: Two charts showing population dynamics and growth rates
+3. **Rate Display**: Current values of key parameters and rates
+4. **Action Buttons**: To run simulations and download data
+
+### Adjusting Parameters
+
+Each model has specific parameters that can be adjusted:
+
+#### Logistic Growth Model:
+- Growth rate (r): Intrinsic per capita growth rate
+- Carrying capacity (K): Maximum population size the environment can sustain
+- Initial population (N₀): Starting population size
+- Time range: Duration of the simulation
+
+#### Predator-Prey Model:
+- Prey growth rate (α): How quickly prey reproduce in absence of predators
+- Predation rate (β): How effectively predators capture prey
+- Conversion efficiency (δ): How efficiently predators convert consumed prey into new predators
+- Predator mortality rate (γ): Natural death rate of predators
+- Initial populations: Starting sizes of prey and predator populations
+- Time parameters: Duration and step size of simulation
+
+#### Interspecific Competition Model:
+- Growth rates (r₁, r₂): Intrinsic growth rates for each species
+- Carrying capacities (K₁, K₂): Maximum population sizes for each species
+- Competition coefficients (α, β): Effect of one species on the other
+- Initial populations: Starting sizes for both species
+- Time parameters: Duration and step size of simulation
+
+### Running Simulations
+
+1. Select the model tab you want to explore
+2. Adjust parameters using sliders or direct input fields
+3. Click the "Run Simulation" button to update the charts
+4. Observe the population dynamics in the left chart and growth rates in the right chart
+5. Check the "Changing Rate Values" section to see current parameter values and rates
+
+### Interpreting Results
+
+- **Population Charts**: Show how population sizes change over time
+- **Rate Charts**: Show how growth rates (dN/dt) change over time
+- **Rate Displays**: Show current values of key parameters and instantaneous growth rates
+
+### Downloading Data
+
+Click the "Download Data" button to export the simulation results as a CSV file. This file contains all time points, population sizes, and growth rates for further analysis.
+
+## Design and Algorithms
+
+### Interface Design
+
+The interface follows a clean, responsive design with:
+
+1. **Tab-based Navigation**: Easy switching between models
+2. **Dual-panel Layout**: Simultaneous view of population dynamics and growth rates
+3. **Interactive Controls**: Sliders with synchronized numeric inputs for precise parameter adjustment
+4. **Real-time Feedback**: Immediate visual updates when parameters change
+5. **Responsive Design**: Adapts to different screen sizes
+
+### Algorithm Implementation
+
+#### Logistic Growth Model
+
+The logistic growth model uses the analytical solution:
+
+```javascript
+N(t) = K / [1 + ((K - N₀)/N₀)e^(-rt)]
+```
+
+This provides exact values at each time point without numerical approximation.
+
+#### Predator-Prey and Competition Models
+
+These models use Euler's method for numerical integration:
+
+```javascript
+// For each time step
+dPreyDt = alpha * prey - beta * prey * predator;
+prey += dPreyDt * dt;
+
+dPredatorDt = delta * beta * prey * predator - gamma * predator;
+predator += dPredatorDt * dt;
+```
+
+The time step (Δt) is customizable, with smaller values providing more accurate results at the cost of computational intensity.
+
+#### Growth Rate Calculation
+
+For all models, growth rates are calculated using the model equations:
+
+- Logistic: dN/dt = rN(1 - N/K)
+- Predator-Prey: 
+  - Prey: dx/dt = αx - βxy
+  - Predator: dy/dt = δβxy - γy
+- Competition:
+  - Species 1: dN₁/dt = r₁N₁ (1 − (N₁ + αN₂)/K₁)
+  - Species 2: dN₂/dt = r₂N₂ (1 − (N₂ + βN₁)/K₂)
+
+### Visualization
+
+The tool uses Chart.js for creating interactive, responsive charts. Each model has two charts:
+
+1. **Population Chart**: Shows population sizes over time
+2. **Rate Chart**: Shows growth rates over time
+
+Charts are updated in real-time as parameters change, with smooth transitions for better user experience.
+
+### Data Export
+
+The download function generates CSV data with the following structure:
+
+```
+Time,Population/GrowthRate...
+```
+
+For example, the Predator-Prey model generates:
+```
 Time,PreyPopulation,PredatorPopulation,PreyRate,PredatorRate
-t0,x(t0),y(t0),dxdt(t0),dydt(t0)
+0,100,8,40,-16
+0.01,100.4,7.84,39.84,-15.68
 ...
+```
 
-Competition
-Time,Species1,Species2,Species1Rate,Species2Rate
-t0,N1(t0),N2(t0),dN1dt(t0),dN2dt(t0)
-...
+## Educational Applications
 
+This tool supports learning about:
 
-Open the file in Excel, Numbers, or Python/R for further analysis and plotting.
+1. **Population Ecology**: How populations grow under different conditions
+2. **Modeling Concepts**: The relationship between differential equations and population dynamics
+3. **Parameter Effects**: How changing parameters affects system behavior
+4. **Numerical Methods**: How differential equations are solved computationally
+5. **Data Analysis**: How to interpret and export simulation results
 
-8) Code architecture (how it works)
-Files & libraries
+## Technical Considerations
 
-Single HTML file (your code block).
+- The tool runs entirely in the browser using HTML, CSS, and JavaScript
+- No server-side processing is required
+- All calculations are performed client-side for immediate feedback
+- The interface is responsive and works on various device sizes
 
-Chart.js via CDN:
+## Conclusion
 
-Creates six line charts: one population and one rate chart per model.
+The Ecological Models Simulation Tool provides an interactive platform for exploring fundamental ecological models. Its intuitive interface, real-time visualizations, and data export capabilities make it valuable for both education and research. By allowing users to manipulate parameters and immediately see the effects, it helps build intuition about complex ecological dynamics.
 
-Structure
-
-Tabs & panels:
-Buttons with data-tab toggle matching #<tab>-content sections.
-
-Controls:
-
-Each parameter has a range and a number input.
-
-syncInputAndSlider() keeps them synchronized and updates the inline value readout.
-
-Charts:
-
-Pre-instantiated Chart.js line charts with empty datasets.
-
-Each Run updates .data.labels and .data.datasets[i].data, then calls .update().
-
-Model calculators:
-
-calculateLogisticGrowth()
-
-Loops over integer times 
-𝑡
-=
-0
-,
-1
-,
-…
-,
-𝑇
-t=0,1,…,T.
-
-Uses the closed-form 
-𝑁
-(
-𝑡
-)
-N(t) and computes 
-𝑑
-𝑁
-/
-𝑑
-𝑡
-dN/dt.
-
-Updates charts and “Current K/dNdt” box.
-
-calculatePredatorPrey()
-
-Reads parameters & Δt, sets steps = time / dt.
-
-Euler updates for 
-𝑥
-,
-𝑦
-x,y; clamps negatives to 0.
-
-Stores 
-𝑥
-,
-𝑦
-,
-𝑑
-𝑥
-/
-𝑑
-𝑡
-,
-𝑑
-𝑦
-/
-𝑑
-𝑡
-x,y,dx/dt,dy/dt for charts & CSV.
-
-calculateCompetition()
-
-Same pattern as Predator–Prey with two logistic-competition equations.
-
-Download helpers
-
-downloadCSV(data, filename) builds a data: URI, creates a hidden <a>, clicks it, and removes it.
-
-Autostart
-
-On window.load, runs all three calculators so charts are populated.
-
-Styling choices
-
-Responsive CSS grid for controls and chart columns.
-
-Subtle shadows, rounded cards, and consistent color palette for visual clarity.
-
-Monospace readouts for rates and 
-𝐾
-K.
-
-9) Parameter guidelines & common pitfalls
-
-Keep Δt small for Predator–Prey and Competition when:
-
-α, β, γ, r are large, or
-
-populations are near zero (fast relative changes), or
-
-you want crisp oscillations without numerical blow-up.
-
-Unrealistic negatives:
-Euler can step below zero when rates are very negative; the code clamps back to 0.
-
-Time range vs Δt:
-Large time ranges with very small Δt mean many steps. That’s fine for modern browsers, but if you notice lag, either shorten the range or increase Δt modestly.
-
-10) Suggested classroom activities
-
-Logistic “maximum growth” demo
-
-Show that 
-𝑑
-𝑁
-/
-𝑑
-𝑡
-dN/dt peaks when 
-𝑁
-≈
-𝐾
-/
-2
-N≈K/2.
-
-Vary 
-𝐾
-K to demonstrate the peak’s location scaling.
-
-Predator–Prey phase lag
-
-Identify that predator peaks follow prey peaks.
-
-Ask students to explain biologically.
-
-Competition outcomes
-
-Systematically vary α and β to discover regions of coexistence vs exclusion.
-
-Tie back to isoclines: 
-𝑁
-1
-+
-𝛼
-𝑁
-2
-=
-𝐾
-1
-N
-1
-	​
-
-+αN
-2
-	​
-
-=K
-1
-	​
-
-, 
-𝑁
-2
-+
-𝛽
-𝑁
-1
-=
-𝐾
-2
-N
-2
-	​
-
-+βN
-1
-	​
-
-=K
-2
-	​
-
-.
-
-11) Extensions you can add (while keeping the original spirit)
-
-Phase-plane plots & nullclines (prey–predator; 
-𝑁
-1
-N
-1
-	​
-
-–
-𝑁
-2
-N
-2
-	​
-
-).
-
-Higher-order integrators (e.g., RK4) for smoother, more stable trajectories.
-
-Time-varying 
-𝐾
-(
-𝑡
-)
-K(t) to mimic environmental change.
-
-Harvesting / stocking terms (e.g., 
-−
-ℎ
-−h, 
-+
-𝑠
-+s).
-
-Stochasticity (random environmental noise) to study variability.
-
-Parameter presets buttons for common scenarios.
-
-12) Troubleshooting
-
-“My predator goes negative.”
-Reduce Δt; ensure δ isn’t too high relative to γ and β; note the code clamps to 0 after each step to stay physical.
-
-“Curves look jagged or blow up.”
-Lower Δt; reduce time range; moderate parameter magnitudes.
-
-“Download didn’t work.”
-Some locked-down browsers block data: downloads—try a different browser or allow pop-ups for local files.
-
-13) Reference summary (at a glance)
-
-Logistic
-
-𝑑
-𝑁
-/
-𝑑
-𝑡
-=
-𝑟
-𝑁
-(
-1
-−
-𝑁
-/
-𝐾
-)
-dN/dt=rN(1−N/K) — closed-form solution used.
-
-Pred–Prey
-
-𝑑
-𝑥
-/
-𝑑
-𝑡
-=
-𝛼
-𝑥
-−
-𝛽
-𝑥
-𝑦
-,
-  
-𝑑
-𝑦
-/
-𝑑
-𝑡
-=
-𝛿
-𝛽
-𝑥
-𝑦
-−
-𝛾
-𝑦
-dx/dt=αx−βxy,dy/dt=δβxy−γy — Euler.
-
-Competition
-
-𝑑
-𝑁
-1
-/
-𝑑
-𝑡
-=
-𝑟
-1
-𝑁
-1
-(
-1
-−
-(
-𝑁
-1
-+
-𝛼
-𝑁
-2
-)
-/
-𝐾
-1
-)
-dN
-1
-	​
-
-/dt=r
-1
-	​
-
-N
-1
-	​
-
-(1−(N
-1
-	​
-
-+αN
-2
-	​
-
-)/K
-1
-	​
-
-)
-
-𝑑
-𝑁
-2
-/
-𝑑
-𝑡
-=
-𝑟
-2
-𝑁
-2
-(
-1
-−
-(
-𝑁
-2
-+
-𝛽
-𝑁
-1
-)
-/
-𝐾
-2
-)
-dN
-2
-	​
-
-/dt=r
-2
-	​
-
-N
-2
-	​
-
-(1−(N
-2
-	​
-
-+βN
-1
-	​
-
-)/K
-2
-	​
-
-) — Euler.
-
-14) Credits
-
-You (original design & implementation).
-
-Chart.js (plotting library via CDN).
+For further exploration, users are encouraged to:
+- Experiment with extreme parameter values
+- Compare results across different models
+- Export data for additional analysis
+- Relate simulation results to real-world ecological systems
